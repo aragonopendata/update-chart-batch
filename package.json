@@ -1,0 +1,14 @@
+{
+  "name": "update-graphs",
+  "version": "1.0.0",
+  "description": "This script will make all charts to be updated.",
+  "main": "update.ts",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "bent": "^7.3.10"
+  }
+}
