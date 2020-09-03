@@ -21,10 +21,12 @@ module.exports = {
         if (element === chartLabels[i]) {
           // Duplicate Data
           chartData.forEach((d, index) => {
-            d.data[findFirst] = Number(d.data[findFirst]);
-            if (d.data[i])
-              d.data[findFirst] += Number(d.data[i])
-            d.data.splice(i, 1);
+            if(d.data){
+              d.data[findFirst] = Number(d.data[findFirst]);
+              if (d.data[i])
+                d.data[findFirst] += Number(d.data[i])
+              d.data.splice(i, 1);
+            }
           });
           chartLabels.splice(i, 1);
         }
@@ -32,11 +34,13 @@ module.exports = {
     });
 
     chartData.forEach((d, index) => {
-      d.data.forEach((element, index) => {
-        if (element % 1 != 0) {
-          d.data[index] = Number(element).toFixed(2);
-        }
-      });
+      if(d.data){
+        d.data.forEach((element, index) => {
+          if (element % 1 != 0) {
+            d.data[index] = Number(element).toFixed(2);
+          }
+        });
+      }
     });
 
     return [unique, chartData];
@@ -270,24 +274,27 @@ function chuck(array, size) {
 function typeOfArray(array) {
   let exit = true;
   let newIndex = 0;
-
-  do {
-    exit = false;
-    if (
-      isNaN(array[newIndex]) &&
-      array[newIndex] !== undefined &&
-      array[newIndex] != null
-    ) {
-      exit = true;
-      return 'String';
-    } else {
-      newIndex++;
-      if (newIndex >= array.length) {
+  if (
+    array
+  ){
+    do {
+      exit = false;
+      if (
+        isNaN(array[newIndex]) &&
+        array[newIndex] !== undefined &&
+        array[newIndex] != null
+      ) {
         exit = true;
-        return 'Number';
+        return 'String';
+      } else {
+        newIndex++;
+        if (newIndex >= array.length) {
+          exit = true;
+          return 'Number';
+        }
       }
-    }
-  } while (!exit);
+    } while (!exit);
+  }
   return undefined;
 }
 

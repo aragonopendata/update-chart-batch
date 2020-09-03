@@ -68,9 +68,10 @@ module.exports = {
   // Update the Chart of the CKAN
   ckanReloadChart: function (dataProcess, ids) {
     api.getPackageCKAN(dataProcess).then(function (data) {
-      if (data.statusCode) {
+      if (data.statusCode || data.result.length == 0) {
         console.log("Get Resource CKAN error");
-        console.log("Dataset: " + data.dataset);
+        console.log("Dataset: " + dataProcess.dataset);
+        console.log("URL: " + dataProcess.url);
         console.log("Note: Maybe the dataset don't exist");
         var nextId = require('./loadMore');
         nextId(ids);
@@ -85,7 +86,7 @@ module.exports = {
             }
 
             if (element.format === 'PX') {
-              const result = parsePXFile(element.data);
+              const result = lib.parsePXFile(element.data);
               headerTable = result[0];
               dataTable = result[1];
             } else if (element.format === 'CSV') {
@@ -119,9 +120,13 @@ function prepareAndSave(dataProcess, headerTable, dataTable, ids) {
   let dataGroup = [];
   let checkedData = [];
   if (dataProcess.isMap) {
-    checkedData = dataProcess.columnsLabel.concat(
-      dataProcess.columnsDescription
-    );
+    if(dataProcess.columnsDescription){
+      checkedData = dataProcess.columnsLabel.concat(
+        dataProcess.columnsDescription
+      );
+    }else{
+      checkedData = dataProcess.columnsLabel;
+    }
     checkedData = checkedData.concat(dataProcess.columnsData);
   } else {
     checkedData = dataProcess.columnsLabel.concat(dataProcess.columnsData);
@@ -136,6 +141,7 @@ function prepareAndSave(dataProcess, headerTable, dataTable, ids) {
     );
   }
   // Preparing the initial table with the correct columns and order
+
   checkedData.forEach(element => {
     const i = headerTable.indexOf(element);
     const groupIndex = headerTable.indexOf(dataProcess.groupRow);
@@ -144,7 +150,7 @@ function prepareAndSave(dataProcess, headerTable, dataTable, ids) {
     const auxArrayGroup = [];
     for (let index = 0; index < dataTable.length; index++) {
       auxArray.push(dataTable[index][i]);
-
+      
       if (groupIndex != -1) {
         auxArrayGroup.push(dataTable[index][groupIndex]);
       }
@@ -159,7 +165,7 @@ function prepareAndSave(dataProcess, headerTable, dataTable, ids) {
   dataSelected.splice(0, 1);
 
   let chartDescription = [];
-  if (dataProcess.isMap) {
+  if (dataProcess.isMap && dataProcess.columnsDescription) {
     dataProcess.columnsDescription.forEach(element => {
       if (chartDescription.length === 0) {
         chartDescription = dataSelected[0];
@@ -174,9 +180,8 @@ function prepareAndSave(dataProcess, headerTable, dataTable, ids) {
     });
   }
 
-
   if (!dataProcess.groupRow) {
-    dataSelected.forEach((element, index) => {
+    dataProcess.legend.forEach((element, index) => {
       dataSelected[index] = {
         data: dataSelected[index],
         label: dataProcess.legend[index].label

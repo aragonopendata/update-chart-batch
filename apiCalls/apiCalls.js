@@ -9,6 +9,7 @@ module.exports = {
         var chartIDs = [];
         try {
             while (!endOfUpdate) {
+                    console.log(config.urlBackend + config.listCharts_ep + '?page=' + page + '&size=' + sizeDefault + '');
                     const get = bent(config.urlBackend, 'GET', 'json', 200);
                     const response = await get(config.listCharts_ep + '?page=' + page + '&size=' + sizeDefault + '');
 
@@ -34,7 +35,7 @@ module.exports = {
             const get = bent(config.urlBackend, 'GET', 'json', 200);
             response = await get(config.process_ep + id);
         } catch (err) {
-            console.log(err);
+            console.log("Process: " + err);
             return err;
         }
         return response;
@@ -43,9 +44,9 @@ module.exports = {
         var response;
         try {
             const post = bent(config.urlBackend, 'POST', 'json', 200);
-            response = await post(config.resorce_ckan_ep, { url: dataProcess.url, format: dataProcess.dataset });
+            response = await post(config.resource_ckan_ep, { url: dataProcess.url, format: dataProcess.dataset });
         } catch (err) {
-            console.log(err);
+            console.log("CKAN: " + err);
             return err;
         }
         return response;
@@ -55,21 +56,22 @@ module.exports = {
         var body = { packages: data }
         try {
             const post = bent(config.urlBackend, 'POST', 'json', 200);
-            response = await post(config.resorce_gaodc_ep, body);
+            response = await post(config.resource_gaodc_ep, body);
         } catch (err) {
-            console.log(err);
+            console.log("GAODC: " + err);
             return err;
         }
         return response;
     },
     getPackageURL: async function (data) {
         var response;
+        
         var body = { packages: data }
         try {
             const post = bent(config.urlBackend, 'POST', 'json', 200);
-            response = await post(config.resorce_url_ep, body);
+            response = await post(config.resource_url_ep, body);
         } catch (err) {
-            console.log(err);
+            console.log("URL: " + err);
             return err;
         }
         return response;
@@ -78,9 +80,9 @@ module.exports = {
         var response;
         try {
             const post = bent(config.urlBackend, 'POST', 'json', 200);
-            response = await post(config.resorce_virtuoso_ep, { packages: data[0] });
+            response = await post(config.resource_virtuoso_ep, { packages: data[0] });
         } catch (err) {
-            console.log(err);
+            console.log("VIRTUOSO: " + err);
             return err;
         }
         return response;

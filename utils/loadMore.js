@@ -19,6 +19,9 @@ function nextId(ids){
                     utilsCharts.urlReloadChart(results, ids);
                 } else if (results.typeOfData === 'SPARQL') {
                     utilsCharts.virtuosoReloadChart(results, ids);
+                }else{
+                    console.log("Get Process error " + id);
+                    nextId(ids);
                 }
             }
         });
