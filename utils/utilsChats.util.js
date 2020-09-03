@@ -68,9 +68,9 @@ module.exports = {
   // Update the Chart of the CKAN
   ckanReloadChart: function (dataProcess, ids) {
     api.getPackageCKAN(dataProcess).then(function (data) {
-      if (dataProcess.statusCode) {
+      if (data.statusCode) {
         console.log("Get Resource CKAN error");
-        console.log("Dataset: " + dataProcess.dataset);
+        console.log("Dataset: " + data.dataset);
         console.log("Note: Maybe the dataset don't exist");
         var nextId = require('./loadMore');
         nextId(ids);
