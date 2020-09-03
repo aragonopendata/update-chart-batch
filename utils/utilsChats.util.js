@@ -7,6 +7,8 @@ module.exports = {
     api.getPackageVIRTUOSO([dataProcess.dataset]).then(function (data) {
       if (data.statusCode) {
         console.log("Get Package Info VIRTUOSO error");
+        console.log("Dataset: " + dataProcess.dataset);
+        console.log("Note: Maybe the dataset don't exist");
         var nextId = require('./loadMore');
         nextId(ids);
       } else {
@@ -25,6 +27,8 @@ module.exports = {
     api.getPackageURL(dataProcess.dataset).then(function (data) {
       if (data.statusCode) {
         console.log("Get Package Info URL error");
+        console.log("Dataset: " + dataProcess.dataset);
+        console.log("Note: Maybe the dataset don't exist");
         var nextId = require('./loadMore');
         nextId(ids);;
       } else {
@@ -50,6 +54,8 @@ module.exports = {
     api.getPackageGAODC(Number(dataProcess.dataset)).then(function (dataTable) {
       if (dataTable.statusCode) {
         console.log("Get Package Info gaodc error");
+        console.log("Dataset: " + dataProcess.dataset);
+        console.log("Note: Maybe the dataset don't exist");
         var nextId = require('./loadMore');
         nextId(ids);
       } else {
@@ -64,6 +70,8 @@ module.exports = {
     api.getPackageCKAN(dataProcess).then(function (data) {
       if (dataProcess.statusCode) {
         console.log("Get Resource CKAN error");
+        console.log("Dataset: " + dataProcess.dataset);
+        console.log("Note: Maybe the dataset don't exist");
         var nextId = require('./loadMore');
         nextId(ids);
       } else {
@@ -121,7 +129,7 @@ function prepareAndSave(dataProcess, headerTable, dataTable, ids) {
 
   if (dataProcess.sortOrder !== -2) {
     dataTable = dataTable.sort(
-      Comparator(
+      lib.Comparator(
         headerTable.findIndex(element => element === dataProcess.fieldOrder),
         dataProcess.sortOrder
       )
