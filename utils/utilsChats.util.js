@@ -27,21 +27,25 @@ module.exports = {
       if (data.statusCode) {
         log.error(["Get Package Info URL error", "Dataset: " + dataProcess.dataset, "Note: Maybe the dataset don't exist", data]);
         var nextId = require('./loadMore');
-        nextId(ids);;
+        nextId(ids);
       } else {
         let headerTable = [];
         let dataTable = [];
         if (data.result.length !== 0) {
-          if (data.result[0].format === 'PX') {
-            const resultado = lib.parsePXFile(data.result[0].data);
-            headerTable = resultado[0];
-            dataTable = resultado[1];
-          } else if (data.result[0].format === 'CSV') {
-            const resultado = lib.parseCSVFile(data.result[0].data, 0);
-            headerTable = resultado[0];
-            dataTable = resultado[1];
+          try {
+            if (data.result[0].format === 'PX') {
+              const resultado = lib.parsePXFile(data.result[0].data);
+              headerTable = resultado[0];
+              dataTable = resultado[1];
+            } else if (data.result[0].format === 'CSV') {
+              const resultado = lib.parseCSVFile(data.result[0].data, 0);
+              headerTable = resultado[0];
+              dataTable = resultado[1];
+            }
+            prepareAndSave(dataProcess, headerTable, dataTable, ids);
+          } catch (error) {
+            log.error(["URL process file error", "Dataset: " + dataProcess.dataset, error, data.result[0].data]);
           }
-          prepareAndSave(dataProcess, headerTable, dataTable, ids);
         }
       }
     });
@@ -93,9 +97,9 @@ module.exports = {
               log.error(["CKAN process file error", "Dataset: " + dataProcess.dataset, "URL: " + dataProcess.url, error, element]);
             }
           });
-          if(!parseError){
+          if (!parseError) {
             prepareAndSave(dataProcess, headerTable, dataTable, ids);
-          }else{
+          } else {
             var nextId = require('./loadMore');
             nextId(ids);
           }
