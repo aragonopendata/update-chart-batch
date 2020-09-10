@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "bent": "^7.3.10"
+    "bent": "^7.3.10",
+    "log4js": "^6.3.0"
   }
 }

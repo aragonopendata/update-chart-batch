@@ -12,12 +12,13 @@
 const bent = require('bent');
 var api = require('./apiCalls/apiCalls');
 var nextId = require('./utils/loadMore');
-
+var log = require('./utils/log');
 
 // Get all the ids of the charts
 api.listOfCharts().then(function (results) {
     if (results.statusCode) {
         console.log("Get List error");
+        log.error("Get List error");
     } else {
         //Now get the procees of each one and update
         nextId(results);

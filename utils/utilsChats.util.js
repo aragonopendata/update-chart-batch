@@ -1,14 +1,13 @@
 var api = require('../apiCalls/apiCalls');
 var lib = require('./lib');
+var log = require('./log');
 
 module.exports = {
   // Update the Chart of VIRTUOSO
   virtuosoReloadChart: function (dataProcess, ids) {
     api.getPackageVIRTUOSO([dataProcess.dataset]).then(function (data) {
       if (data.statusCode) {
-        console.log("Get Package Info VIRTUOSO error");
-        console.log("Dataset: " + dataProcess.dataset);
-        console.log("Note: Maybe the dataset don't exist");
+        log.error(["Get Package Info VIRTUOSO error", "Dataset: " + dataProcess.dataset, "Note: Maybe the dataset don't exist", data]);
         var nextId = require('./loadMore');
         nextId(ids);
       } else {
@@ -26,9 +25,7 @@ module.exports = {
   urlReloadChart: function (dataProcess, ids) {
     api.getPackageURL(dataProcess.dataset).then(function (data) {
       if (data.statusCode) {
-        console.log("Get Package Info URL error");
-        console.log("Dataset: " + dataProcess.dataset);
-        console.log("Note: Maybe the dataset don't exist");
+        log.error(["Get Package Info URL error", "Dataset: " + dataProcess.dataset, "Note: Maybe the dataset don't exist", data]);
         var nextId = require('./loadMore');
         nextId(ids);;
       } else {
@@ -53,9 +50,7 @@ module.exports = {
   gaodcReloadChart: function (dataProcess, ids) {
     api.getPackageGAODC(Number(dataProcess.dataset)).then(function (dataTable) {
       if (dataTable.statusCode) {
-        console.log("Get Package Info gaodc error");
-        console.log("Dataset: " + dataProcess.dataset);
-        console.log("Note: Maybe the dataset don't exist");
+        log.error(["Get Package Info gaodc error", "Dataset: " + dataProcess.dataset, "Note: Maybe the dataset don't exist", data]);
         var nextId = require('./loadMore');
         nextId(ids);
       } else {
@@ -69,33 +64,41 @@ module.exports = {
   ckanReloadChart: function (dataProcess, ids) {
     api.getPackageCKAN(dataProcess).then(function (data) {
       if (data.statusCode || data.result.length == 0) {
-        console.log("Get Resource CKAN error");
-        console.log("Dataset: " + dataProcess.dataset);
-        console.log("URL: " + dataProcess.url);
-        console.log("Note: Maybe the dataset don't exist");
+        log.error(["Get Package Resource CKAN error", "Dataset: " + dataProcess.dataset, "URL: " + dataProcess.url, "Note: Maybe the dataset don't exist", data]);
         var nextId = require('./loadMore');
         nextId(ids);
       } else {
         let headerTable;
         let dataTable;
+        let parseError = false;
         if (data.result.length !== 0) {
           data.result.forEach((element, index) => {
-            if (index === 0) {
-              headerTable = [];
-              dataTable = [];
-            }
+            try {
+              if (index === 0) {
+                headerTable = [];
+                dataTable = [];
+              }
 
-            if (element.format === 'PX') {
-              const result = lib.parsePXFile(element.data);
-              headerTable = result[0];
-              dataTable = result[1];
-            } else if (element.format === 'CSV') {
-              const result = lib.parseCSVFile(element.data, index);
-              headerTable = result[0];
-              dataTable = dataTable.concat(result[1]);
+              if (element.format === 'PX') {
+                const result = lib.parsePXFile(element.data);
+                headerTable = result[0];
+                dataTable = result[1];
+              } else if (element.format === 'CSV') {
+                const result = lib.parseCSVFile(element.data, index);
+                headerTable = result[0];
+                dataTable = dataTable.concat(result[1]);
+              }
+            } catch (error) {
+              parseError = true;
+              log.error(["CKAN process file error", "Dataset: " + dataProcess.dataset, "URL: " + dataProcess.url, error, element]);
             }
           });
-          prepareAndSave(dataProcess, headerTable, dataTable, ids);
+          if(!parseError){
+            prepareAndSave(dataProcess, headerTable, dataTable, ids);
+          }else{
+            var nextId = require('./loadMore');
+            nextId(ids);
+          }
         }
       }
     });
@@ -120,11 +123,11 @@ function prepareAndSave(dataProcess, headerTable, dataTable, ids) {
   let dataGroup = [];
   let checkedData = [];
   if (dataProcess.isMap) {
-    if(dataProcess.columnsDescription){
+    if (dataProcess.columnsDescription) {
       checkedData = dataProcess.columnsLabel.concat(
         dataProcess.columnsDescription
       );
-    }else{
+    } else {
       checkedData = dataProcess.columnsLabel;
     }
     checkedData = checkedData.concat(dataProcess.columnsData);
@@ -150,7 +153,7 @@ function prepareAndSave(dataProcess, headerTable, dataTable, ids) {
     const auxArrayGroup = [];
     for (let index = 0; index < dataTable.length; index++) {
       auxArray.push(dataTable[index][i]);
-      
+
       if (groupIndex != -1) {
         auxArrayGroup.push(dataTable[index][groupIndex]);
       }
@@ -281,7 +284,7 @@ function prepareAndSave(dataProcess, headerTable, dataTable, ids) {
     dataProcess.widthGraph
   ).then(function (dataLink) {
     if (dataLink.statusCode) {
-      console.log("Save Graph error");
+      log.error(["Save Graph error", dataLink]);
     } else {
       api.saveProcess(
         dataProcess.id,
@@ -306,12 +309,13 @@ function prepareAndSave(dataProcess, headerTable, dataTable, ids) {
         dataProcess.axisXActivator
       ).then(function (results) {
         if (results.statusCode) {
-          console.log("Save Process error");
+          log.error(["Save Process error", results]);
         } else {
-          console.log("DONE");
-          if(ids.length == 0){
+          log.error("DONE")
+          if (ids.length == 0) {
             console.log("Finish");
-          }else{
+            log.error("Finish")
+          } else {
             var nextId = require('./loadMore');
             nextId(ids);
           }
