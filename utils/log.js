@@ -1,7 +1,7 @@
 const log4js = require("log4js");
 
 log4js.configure({
-    appenders: { update: { type: "dateFile", filename: "update.log", pattern: '.yyyy-MM-dd-hh-mm', daysToKeep: 3  } },
+    appenders: { update: { type: "dateFile", filename: "update.log", pattern: '.yyyy-MM-dd-hh', daysToKeep: 3  } },
     categories: { default: { appenders: ["update"], level: "error" } }, 
     });
 const logger = log4js.getLogger("update");

@@ -11,13 +11,19 @@ module.exports = {
         var nextId = require('./loadMore');
         nextId(ids);
       } else {
-        let headerTable = [];
-        const dataTable = [];
+        try {
+          let headerTable = [];
+          const dataTable = [];
+  
+          virtuosoPInitialTable(data, headerTable, dataTable);
+          headerTable = data.head.vars;
 
-        virtuosoPInitialTable(data, headerTable, dataTable);
-        headerTable = data.head.vars;
-
-        prepareAndSave(dataProcess, headerTable, dataTable, ids);
+          prepareAndSave(dataProcess, headerTable, dataTable, ids);
+        } catch (error) {
+          log.error(["Get Package Info VIRTUOSO error", "Dataset: " + dataProcess.dataset, "Note: Maybe the dataset don't exist", data, error]);
+          var nextId = require('./loadMore');
+          nextId(ids)
+        }
       }
     });
   },
@@ -45,6 +51,8 @@ module.exports = {
             prepareAndSave(dataProcess, headerTable, dataTable, ids);
           } catch (error) {
             log.error(["URL process file error", "Dataset: " + dataProcess.dataset, error, data.result[0].data]);
+            var nextId = require('./loadMore');
+            nextId(ids);
           }
         }
       }
@@ -58,16 +66,21 @@ module.exports = {
         var nextId = require('./loadMore');
         nextId(ids);
       } else {
-        const headerTable = dataTable[0];
-        dataTable.splice(0, 1);
-        prepareAndSave(dataProcess, headerTable, dataTable, ids);
+        try {
+          const headerTable = dataTable[0];
+          dataTable.splice(0, 1);
+          prepareAndSave(dataProcess, headerTable, dataTable, ids);
+        } catch (error) {
+          var nextId = require('./loadMore');
+          nextId(ids);
+        }
       }
     });
   },
   // Update the Chart of the CKAN
   ckanReloadChart: function (dataProcess, ids) {
     api.getPackageCKAN(dataProcess).then(function (data) {
-      if (data.statusCode || data.result.length == 0) {
+      if (!data || data.statusCode || data.result.length == 0) {
         log.error(["Get Package Resource CKAN error", "Dataset: " + dataProcess.dataset, "URL: " + dataProcess.url, "Note: Maybe the dataset don't exist", data]);
         var nextId = require('./loadMore');
         nextId(ids);
@@ -75,7 +88,7 @@ module.exports = {
         let headerTable;
         let dataTable;
         let parseError = false;
-        if (data.result.length !== 0) {
+        if (data && data.result && data.result.length !== 0) {
           data.result.forEach((element, index) => {
             try {
               if (index === 0) {
@@ -98,11 +111,21 @@ module.exports = {
             }
           });
           if (!parseError) {
-            prepareAndSave(dataProcess, headerTable, dataTable, ids);
+            try {
+              prepareAndSave(dataProcess, headerTable, dataTable, ids);
+            } catch (error) {
+              var nextId = require('./loadMore');
+              nextId(ids);
+            }
           } else {
+            log.error(["CKAN process file error prepareAndSave", "Dataset: " + dataProcess.dataset, "URL: " + dataProcess.url, error]);
             var nextId = require('./loadMore');
             nextId(ids);
           }
+        } else{
+          log.error(["CKAN process file error", "Dataset: " + dataProcess.dataset, "URL: " + dataProcess.url, data]);
+          var nextId = require('./loadMore');
+          nextId(ids);
         }
       }
     });
