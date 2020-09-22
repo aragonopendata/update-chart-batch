@@ -14,7 +14,7 @@ module.exports = {
         try {
           let headerTable = [];
           const dataTable = [];
-  
+
           virtuosoPInitialTable(data, headerTable, dataTable);
           headerTable = data.head.vars;
 
@@ -122,7 +122,7 @@ module.exports = {
             var nextId = require('./loadMore');
             nextId(ids);
           }
-        } else{
+        } else {
           log.error(["CKAN process file error", "Dataset: " + dataProcess.dataset, "URL: " + dataProcess.url, data]);
           var nextId = require('./loadMore');
           nextId(ids);
@@ -171,183 +171,195 @@ function prepareAndSave(dataProcess, headerTable, dataTable, ids) {
     );
   }
   // Preparing the initial table with the correct columns and order
-
+  let error = false;
   checkedData.forEach(element => {
     const i = headerTable.indexOf(element);
-    const groupIndex = headerTable.indexOf(dataProcess.groupRow);
+    if (i != -1) {
+      const groupIndex = headerTable.indexOf(dataProcess.groupRow);
 
-    const auxArray = [];
-    const auxArrayGroup = [];
-    for (let index = 0; index < dataTable.length; index++) {
-      auxArray.push(dataTable[index][i]);
+      const auxArray = [];
+      const auxArrayGroup = [];
+      for (let index = 0; index < dataTable.length; index++) {
+        auxArray.push(dataTable[index][i]);
 
-      if (groupIndex != -1) {
-        auxArrayGroup.push(dataTable[index][groupIndex]);
-      }
-    }
-    dataSelected.push(auxArray);
-    dataGroup = auxArrayGroup;
-  });
-
-  // Prepare the two arrays of data
-  // Labels Array and the Data array with the Legend
-  let chartLabels = dataSelected[0];
-  dataSelected.splice(0, 1);
-
-  let chartDescription = [];
-  if (dataProcess.isMap && dataProcess.columnsDescription) {
-    dataProcess.columnsDescription.forEach(element => {
-      if (chartDescription.length === 0) {
-        chartDescription = dataSelected[0];
-        dataSelected.splice(0, 1);
-      } else {
-        const aux = dataSelected[0];
-        chartDescription.forEach((elemento, index) => {
-          chartDescription[index] = elemento + ' - ' + aux[index];
-        });
-        dataSelected.splice(0, 1);
-      }
-    });
-  }
-
-  if (!dataProcess.groupRow) {
-    dataProcess.legend.forEach((element, index) => {
-      dataSelected[index] = {
-        data: dataSelected[index],
-        label: dataProcess.legend[index].label
-      };
-    });
-  } else {
-
-    let groupedData = {};
-    dataGroup.forEach((element, i) => {
-      //Join group
-      if (!groupedData[element])
-        groupedData[element] = [];
-      //This is done to take care that the function removeDuplicates dont delete duplicate data of other group
-      for (let x = groupedData[element].length; x < i; x++) {
-        groupedData[element].push("0");
-      };
-      groupedData[element].push(dataSelected[0][i]);
-    });
-    dataSelected = [];
-    for (const key in groupedData) {
-      dataSelected.push({
-        data: groupedData[key],
-        label: key
-      });
-    }
-  }
-
-
-  let chartData = dataSelected;
-
-  let chartNumber;
-  if (dataProcess.chartType === 'number') {
-    let aux = 0;
-    chartNumber = dataProcess.numberchart;
-    switch (dataProcess.numberchart.numberOption) {
-      case '0':
-        chartNumber.number = chartLabels[chartLabels.length - 1] || '0';
-        break;
-      case '1':
-        chartLabels.forEach(element => {
-          aux = aux + Number(element);
-        });
-        chartNumber.number = aux.toString();
-        break;
-      case '2':
-        chartLabels.forEach(element => {
-          aux = aux + Number(element);
-        });
-        chartNumber.number = (aux / chartLabels.length).toFixed(2).toString();
-        break;
-    }
-  }
-
-  // Delete duplicate values
-  if (!dataProcess.isMap) {
-    //removeDuplicates(chartLabels, chartData);
-    const resultado = lib.removeDuplicates(chartLabels, chartData);
-    chartData = resultado[1];
-    if (dataProcess.topRows != -1 && dataProcess.topRows != null && dataProcess.topRows != 0) {
-      chartLabels = chartLabels.splice(0, dataProcess.topRows);
-      chartData = chartData.splice(0, dataProcess.topRows);
-    }
-  } else {
-    let index = 0;
-    do {
-      let i = index + 1;
-      while (i < chartLabels.length) {
-        if (
-          chartLabels[index] === chartLabels[i] &&
-          chartData[0].data[index] === chartData[0].data[i]
-        ) {
-          chartLabels.splice(i, 1);
-          chartData[0].data.splice(i, 1);
-          if (chartDescription && chartDescription.length !== 0) {
-            chartDescription[index] =
-              chartDescription[index] + ' ' + chartDescription[i];
-            chartDescription.splice(i, 1);
-          }
-          i--;
+        if (groupIndex != -1) {
+          auxArrayGroup.push(dataTable[index][groupIndex]);
         }
-        i++;
       }
-      index++;
-    } while (index < chartLabels.length);
-  }
-  // Update the chart with the new data
-
-  api.saveGraph(
-    dataProcess.chartDataId,
-    dataProcess.chartType,
-    dataProcess.isMap,
-    chartLabels,
-    chartNumber,
-    chartData,
-    chartDescription,
-    dataProcess.title,
-    dataProcess.widthGraph
-  ).then(function (dataLink) {
-    if (dataLink.statusCode) {
-      log.error(["Save Graph error", dataLink]);
+      dataSelected.push(auxArray);
+      dataGroup = auxArrayGroup;
     } else {
-      api.saveProcess(
-        dataProcess.id,
-        dataProcess.typeOfData,
-        dataProcess.url,
-        dataProcess.dataset,
-        dataProcess.ckanDataset,
-        dataProcess.chartType,
-        dataProcess.isMap,
-        chartNumber,
-        dataProcess.columnsLabel,
-        dataProcess.columnsData,
-        dataProcess.columnsDescription,
-        dataProcess.fieldOrder,
-        dataProcess.sortOrder,
-        dataProcess.title,
-        dataProcess.legend,
-        dataProcess.widthGraph,
-        dataLink.id,
-        dataProcess.topRows,
-        dataProcess.groupRow,
-        dataProcess.axisXActivator
-      ).then(function (results) {
-        if (results.statusCode) {
-          log.error(["Save Process error", results]);
+      error = true;
+    }
+  });
+
+  if (error) {
+    console.log("Error: Column mismatch encountered, column names are not the same as previous saved");
+    log.error(["Error: Column mismatch encountered, column names are not the same as previous saved"]);
+    var nextId = require('./loadMore');
+    nextId(ids);
+  } else {
+
+    // Prepare the two arrays of data
+    // Labels Array and the Data array with the Legend
+    let chartLabels = dataSelected[0];
+    dataSelected.splice(0, 1);
+
+    let chartDescription = [];
+    if (dataProcess.isMap && dataProcess.columnsDescription) {
+      dataProcess.columnsDescription.forEach(element => {
+        if (chartDescription.length === 0) {
+          chartDescription = dataSelected[0];
+          dataSelected.splice(0, 1);
         } else {
-          log.error("DONE")
-          if (ids.length == 0) {
-            console.log("Finish");
-            log.error("Finish")
-          } else {
-            var nextId = require('./loadMore');
-            nextId(ids);
-          }
+          const aux = dataSelected[0];
+          chartDescription.forEach((elemento, index) => {
+            chartDescription[index] = elemento + ' - ' + aux[index];
+          });
+          dataSelected.splice(0, 1);
         }
       });
     }
-  });
+
+    if (!dataProcess.groupRow) {
+      dataProcess.legend.forEach((element, index) => {
+        dataSelected[index] = {
+          data: dataSelected[index],
+          label: dataProcess.legend[index].label
+        };
+      });
+    } else {
+
+      let groupedData = {};
+      dataGroup.forEach((element, i) => {
+        //Join group
+        if (!groupedData[element])
+          groupedData[element] = [];
+        //This is done to take care that the function removeDuplicates dont delete duplicate data of other group
+        for (let x = groupedData[element].length; x < i; x++) {
+          groupedData[element].push("0");
+        };
+        groupedData[element].push(dataSelected[0][i]);
+      });
+      dataSelected = [];
+      for (const key in groupedData) {
+        dataSelected.push({
+          data: groupedData[key],
+          label: key
+        });
+      }
+    }
+
+
+    let chartData = dataSelected;
+
+    let chartNumber;
+    if (dataProcess.chartType === 'number') {
+      let aux = 0;
+      chartNumber = dataProcess.numberchart;
+      switch (dataProcess.numberchart.numberOption) {
+        case '0':
+          chartNumber.number = chartLabels[chartLabels.length - 1] || '0';
+          break;
+        case '1':
+          chartLabels.forEach(element => {
+            aux = aux + Number(element);
+          });
+          chartNumber.number = aux.toString();
+          break;
+        case '2':
+          chartLabels.forEach(element => {
+            aux = aux + Number(element);
+          });
+          chartNumber.number = (aux / chartLabels.length).toFixed(2).toString();
+          break;
+      }
+    }
+
+    // Delete duplicate values
+    if (!dataProcess.isMap) {
+      //removeDuplicates(chartLabels, chartData);
+      const resultado = lib.removeDuplicates(chartLabels, chartData);
+      chartData = resultado[1];
+      if (dataProcess.topRows != -1 && dataProcess.topRows != null && dataProcess.topRows != 0) {
+        chartLabels = chartLabels.splice(0, dataProcess.topRows);
+        chartData = chartData.splice(0, dataProcess.topRows);
+      }
+    } else {
+      let index = 0;
+      do {
+        let i = index + 1;
+        while (i < chartLabels.length) {
+          if (
+            chartLabels[index] === chartLabels[i] &&
+            chartData[0].data[index] === chartData[0].data[i]
+          ) {
+            chartLabels.splice(i, 1);
+            chartData[0].data.splice(i, 1);
+            if (chartDescription && chartDescription.length !== 0) {
+              chartDescription[index] =
+                chartDescription[index] + ' ' + chartDescription[i];
+              chartDescription.splice(i, 1);
+            }
+            i--;
+          }
+          i++;
+        }
+        index++;
+      } while (index < chartLabels.length);
+    }
+    // Update the chart with the new data
+
+    api.saveGraph(
+      dataProcess.chartDataId,
+      dataProcess.chartType,
+      dataProcess.isMap,
+      chartLabels,
+      chartNumber,
+      chartData,
+      chartDescription,
+      dataProcess.title,
+      dataProcess.widthGraph
+    ).then(function (dataLink) {
+      if (dataLink.statusCode) {
+        log.error(["Save Graph error", dataLink]);
+      } else {
+        api.saveProcess(
+          dataProcess.id,
+          dataProcess.typeOfData,
+          dataProcess.url,
+          dataProcess.dataset,
+          dataProcess.ckanDataset,
+          dataProcess.chartType,
+          dataProcess.isMap,
+          chartNumber,
+          dataProcess.columnsLabel,
+          dataProcess.columnsData,
+          dataProcess.columnsDescription,
+          dataProcess.fieldOrder,
+          dataProcess.sortOrder,
+          dataProcess.title,
+          dataProcess.legend,
+          dataProcess.widthGraph,
+          dataLink.id,
+          dataProcess.topRows,
+          dataProcess.groupRow,
+          dataProcess.axisXActivator
+        ).then(function (results) {
+          if (results.statusCode) {
+            log.error(["Save Process error", results]);
+          } else {
+            log.error("DONE")
+            if (ids.length == 0) {
+              console.log("Finish");
+              log.error("Finish")
+            } else {
+              var nextId = require('./loadMore');
+              nextId(ids);
+            }
+          }
+        });
+      }
+    });
+  }
 }
