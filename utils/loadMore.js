@@ -17,7 +17,7 @@ function nextId(ids){
                     utilsCharts.gaodcReloadChart(results, ids);
                 } else if (results.typeOfData === 'URL') {
                     utilsCharts.urlReloadChart(results, ids);
-                } else if (results.typeOfData === 'SPARQL') {
+                } else if (results.typeOfData === 'SPARQL' || results.typeOfData === 'VIRTUOSO') {
                     utilsCharts.virtuosoReloadChart(results, ids);
                 }else{
                     console.log("Get Process error " + id);
